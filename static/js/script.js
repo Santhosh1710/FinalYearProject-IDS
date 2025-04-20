@@ -264,7 +264,7 @@ document.getElementById('predictionForm').addEventListener('submit', async (e) =
 
     // Send data to backend
     try {
-        const response = await fetch('/predict', {
+        const response = await fetch('/predict', { // Relative URL, works on Render
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

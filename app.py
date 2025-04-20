@@ -3,11 +3,11 @@ import numpy as np
 import joblib
 from tensorflow.keras.models import load_model
 from sklearn.preprocessing import LabelEncoder
-from sklearn.exceptions import NotFittedError
 from flask import Flask, request, jsonify, render_template
 from collections import Counter
 import os
 import logging
+import sys
 
 app = Flask(__name__)
 
@@ -15,9 +15,16 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Log current directory and files
+# Log environment and dependencies
 logger.info(f"Current directory: {os.getcwd()}")
 logger.info(f"Files in directory: {os.listdir('.')}")
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Numpy version: {np.__version__}")
+try:
+    import tensorflow as tf
+    logger.info(f"TensorFlow version: {tf.__version__}")
+except ImportError:
+    logger.error("TensorFlow not installed")
 
 # Define packet nature descriptions
 def get_packet_nature(predicted_class):
@@ -74,11 +81,19 @@ classical_models = {
 }
 cnn_lstm_model_file = 'ids_lstm_model_final.h5'
 
+# Verify model files exist
+required_files = list(classical_models.values()) + [cnn_lstm_model_file, 'KDDTrain+.txt']
+missing_files = [f for f in required_files if not os.path.exists(f)]
+if missing_files:
+    logger.error(f"Missing files: {missing_files}")
+else:
+    logger.info("All required files present")
+
 # Load training columns for alignment
 training_columns = None
 try:
     logger.info("Loading KDDTrain+.txt...")
-    training_data = pd.read_csv('KDDTrain+.txt', header=None, usecols=range(42))  # Exclude difficulty_level
+    training_data = pd.read_csv('KDDTrain+.txt', header=None, usecols=range(42))
     training_data.columns = ['duration', 'protocol_type', 'service', 'flag', 'src_bytes', 'dst_bytes', 'land',
                              'wrong_fragment', 'urgent', 'hot', 'num_failed_logins', 'logged_in', 'num_compromised',
                              'root_shell', 'su_attempted', 'num_root', 'num_file_creations', 'num_shells',
@@ -102,6 +117,10 @@ except Exception as e:
 # Load models
 models = {}
 for name, model_file in classical_models.items():
+    if not os.path.exists(model_file):
+        logger.error(f"Model file {model_file} not found")
+        models[name] = None
+        continue
     try:
         logger.info(f"Loading {name} model...")
         models[name] = joblib.load(model_file)
@@ -110,13 +129,17 @@ for name, model_file in classical_models.items():
         logger.error(f"Failed to load {name} model: {str(e)}")
         models[name] = None
 
-try:
-    logger.info("Loading CNN-LSTM model...")
-    models['CNN-LSTM'] = load_model(cnn_lstm_model_file)
-    logger.info("CNN-LSTM model loaded successfully")
-except Exception as e:
-    logger.error(f"Failed to load CNN-LSTM model: {str(e)}")
+if not os.path.exists(cnn_lstm_model_file):
+    logger.error(f"CNN-LSTM model file {cnn_lstm_model_file} not found")
     models['CNN-LSTM'] = None
+else:
+    try:
+        logger.info("Loading CNN-LSTM model...")
+        models['CNN-LSTM'] = load_model(cnn_lstm_model_file)
+        logger.info("CNN-LSTM model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load CNN-LSTM model: {str(e)}")
+        models['CNN-LSTM'] = None
 
 @app.route('/')
 def index():
@@ -126,7 +149,6 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get form data
         logger.info("Received form data: %s", dict(request.form))
         input_data = request.form.to_dict()
 
@@ -224,7 +246,7 @@ def predict():
         if model_predictions:
             vote_counts = Counter(model_predictions)
             max_count = max(vote_counts.values())
-            priority = ['DoS', 'Probe', 'R2L', 'U2R', 'Normal']  # DoS > Probe > R2L > U2R > Normal
+            priority = ['DoS', 'Probe', 'R2L', 'U2R', 'Normal']
             candidates = [cls for cls, count in vote_counts.items() if count == max_count]
             consensus_class = min(candidates, key=lambda x: priority.index(x))
             total_votes = len(model_predictions)

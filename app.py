@@ -6,8 +6,18 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.exceptions import NotFittedError
 from flask import Flask, request, jsonify, render_template
 from collections import Counter
+import os
+import logging
 
 app = Flask(__name__)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Log current directory and files
+logger.info(f"Current directory: {os.getcwd()}")
+logger.info(f"Files in directory: {os.listdir('.')}")
 
 # Define packet nature descriptions
 def get_packet_nature(predicted_class):
@@ -22,25 +32,33 @@ def get_packet_nature(predicted_class):
 
 # Preprocessing functions
 def one_hot(df, cols):
-    for each in cols:
-        dummies = pd.get_dummies(df[each], prefix=each, drop_first=False)
-        df = pd.concat([df, dummies], axis=1)
-        df = df.drop(columns=[each])
-    return df
+    try:
+        for each in cols:
+            dummies = pd.get_dummies(df[each], prefix=each, drop_first=False)
+            df = pd.concat([df, dummies], axis=1)
+            df = df.drop(columns=[each])
+        return df
+    except Exception as e:
+        logger.error(f"One-hot encoding error: {str(e)}")
+        raise
 
 def normalize(df, cols):
-    result = df.copy()
-    for feature_name in cols:
-        if result[feature_name].dtype == bool:
-            result[feature_name] = result[feature_name].astype(int)
-        if result[feature_name].dtype == 'object':
-            result[feature_name] = pd.to_numeric(result[feature_name], errors='coerce')
-        if pd.api.types.is_numeric_dtype(result[feature_name]):
-            max_value = result[feature_name].max()
-            min_value = result[feature_name].min()
-            if max_value > min_value:
-                result[feature_name] = (result[feature_name] - min_value) / (max_value - min_value)
-    return result
+    try:
+        result = df.copy()
+        for feature_name in cols:
+            if result[feature_name].dtype == bool:
+                result[feature_name] = result[feature_name].astype(int)
+            if result[feature_name].dtype == 'object':
+                result[feature_name] = pd.to_numeric(result[feature_name], errors='coerce')
+            if pd.api.types.is_numeric_dtype(result[feature_name]):
+                max_value = result[feature_name].max()
+                min_value = result[feature_name].min()
+                if max_value > min_value:
+                    result[feature_name] = (result[feature_name] - min_value) / (max_value - min_value)
+        return result
+    except Exception as e:
+        logger.error(f"Normalization error: {str(e)}")
+        raise
 
 # Initialize LabelEncoder
 le = LabelEncoder()
@@ -56,37 +74,61 @@ classical_models = {
 }
 cnn_lstm_model_file = 'ids_lstm_model_final.h5'
 
-# Load training columns for alignment (optional)
+# Load training columns for alignment
+training_columns = None
 try:
-    training_data = pd.read_csv('KDDTrain+.txt', header=None)
-    training_data.columns = ['duration', 'protocol_type', 'service', 'flag', 'src_bytes', 'dst_bytes', 'land', 
-                             'wrong_fragment', 'urgent', 'hot', 'num_failed_logins', 'logged_in', 'num_compromised', 
-                             'root_shell', 'su_attempted', 'num_root', 'num_file_creations', 'num_shells', 
-                             'num_access_files', 'num_outbound_cmds', 'is_host_login', 'is_guest_login', 'count', 
-                             'srv_count', 'serror_rate', 'srv_serror_rate', 'rerror_rate', 'srv_rerror_rate', 
-                             'same_srv_rate', 'diff_srv_rate', 'srv_diff_host_rate', 'dst_host_count', 
-                             'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate', 
-                             'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate', 'dst_host_serror_rate', 
-                             'dst_host_srv_serror_rate', 'dst_host_rerror_rate', 'dst_host_srv_rerror_rate', 
-                             'subclass', 'difficulty_level']
-    training_data = training_data.drop(['difficulty_level', 'subclass'], axis=1)
+    logger.info("Loading KDDTrain+.txt...")
+    training_data = pd.read_csv('KDDTrain+.txt', header=None, usecols=range(42))  # Exclude difficulty_level
+    training_data.columns = ['duration', 'protocol_type', 'service', 'flag', 'src_bytes', 'dst_bytes', 'land',
+                             'wrong_fragment', 'urgent', 'hot', 'num_failed_logins', 'logged_in', 'num_compromised',
+                             'root_shell', 'su_attempted', 'num_root', 'num_file_creations', 'num_shells',
+                             'num_access_files', 'num_outbound_cmds', 'is_host_login', 'is_guest_login', 'count',
+                             'srv_count', 'serror_rate', 'srv_serror_rate', 'rerror_rate', 'srv_rerror_rate',
+                             'same_srv_rate', 'diff_srv_rate', 'srv_diff_host_rate', 'dst_host_count',
+                             'dst_host_srv_count', 'dst_host_same_srv_rate', 'dst_host_diff_srv_rate',
+                             'dst_host_same_src_port_rate', 'dst_host_srv_diff_host_rate', 'dst_host_serror_rate',
+                             'dst_host_srv_serror_rate', 'dst_host_rerror_rate', 'dst_host_srv_rerror_rate',
+                             'subclass']
+    training_data = training_data.drop(['subclass'], axis=1)
     training_data = one_hot(training_data, cols=['protocol_type', 'service', 'flag'])
     training_columns = training_data.columns
-    print("Training columns loaded:", len(training_columns))
+    logger.info(f"Training columns loaded: {len(training_columns)}")
 except FileNotFoundError:
+    logger.warning("KDDTrain+.txt not found. Using input data columns.")
+except Exception as e:
+    logger.error(f"Error loading KDDTrain+.txt: {str(e)}")
     training_columns = None
-    print("Warning: KDDTrain+.txt not found. Using input data columns.")
+
+# Load models
+models = {}
+for name, model_file in classical_models.items():
+    try:
+        logger.info(f"Loading {name} model...")
+        models[name] = joblib.load(model_file)
+        logger.info(f"{name} model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to load {name} model: {str(e)}")
+        models[name] = None
+
+try:
+    logger.info("Loading CNN-LSTM model...")
+    models['CNN-LSTM'] = load_model(cnn_lstm_model_file)
+    logger.info("CNN-LSTM model loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to load CNN-LSTM model: {str(e)}")
+    models['CNN-LSTM'] = None
 
 @app.route('/')
 def index():
+    logger.info("Serving index.html")
     return render_template('index.html')
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         # Get form data
+        logger.info("Received form data: %s", dict(request.form))
         input_data = request.form.to_dict()
-        print("Received form data:", input_data)
 
         # Convert numeric fields to float/int
         numeric_fields = ['duration', 'src_bytes', 'dst_bytes', 'land', 'wrong_fragment', 'urgent', 'hot',
@@ -102,25 +144,26 @@ def predict():
                 try:
                     input_data[field] = float(input_data[field])
                 except ValueError:
+                    logger.error(f"Invalid numeric value for {field}: {input_data[field]}")
                     return jsonify({'error': f"Invalid numeric value for {field}: {input_data[field]}"}), 400
         
         # Create DataFrame
         input_df = pd.DataFrame([input_data])
-        print("Input DataFrame columns:", input_df.columns.tolist())
+        logger.info("Input DataFrame columns: %s", input_df.columns.tolist())
 
         # Preprocess input
         cols = ['protocol_type', 'service', 'flag']
         input_df = one_hot(input_df, cols)
         input_df = normalize(input_df, input_df.columns)
-        print("Preprocessed DataFrame shape:", input_df.shape)
+        logger.info("Preprocessed DataFrame shape: %s", input_df.shape)
 
         # Validate feature count
-        if training_columns is not None and input_df.shape[1] < len(training_columns):
-            print("Warning: Input has fewer features than expected:", input_df.shape[1], "vs", len(training_columns))
+        if training_columns is not None:
+            logger.info("Aligning input with training columns...")
             input_df = input_df.reindex(columns=training_columns, fill_value=0)
+            logger.info("Final input shape: %s", input_df.shape)
         else:
-            print("Warning: Using input data columns for alignment.")
-        print("Final input shape:", input_df.shape)
+            logger.warning("No training columns available. Using input data columns.")
 
         input_array = input_df.values
         input_array_cnn_lstm = input_array.reshape(input_array.shape[0], input_array.shape[1], 1)
@@ -129,52 +172,58 @@ def predict():
         results = {}
         model_predictions = []
         for name, model_file in classical_models.items():
+            model = models.get(name)
+            if model is None:
+                results[name] = {'error': f"Model {name} not loaded"}
+                logger.error(f"Model {name} not loaded for prediction")
+                continue
             try:
-                model = joblib.load(model_file)
                 prediction = model.predict(input_array)
-                print(f"{name} raw prediction:", prediction)
+                logger.info(f"{name} raw prediction: {prediction}")
                 if np.issubdtype(prediction.dtype, np.integer):
                     predicted_class = le.inverse_transform(prediction)[0]
                 else:
                     predicted_class = str(prediction[0])
                     if predicted_class not in class_names:
                         results[name] = {'error': f"Invalid class: {predicted_class}"}
+                        logger.error(f"Invalid class from {name}: {predicted_class}")
                         continue
                 results[name] = {
                     'prediction': predicted_class,
                     'nature': get_packet_nature(predicted_class)
                 }
                 model_predictions.append(predicted_class)
-                print(f"{name} processed prediction:", predicted_class)
+                logger.info(f"{name} processed prediction: {predicted_class}")
             except Exception as e:
-                results[name] = {'error': f"Failed to load or predict with {name}: {str(e)}"}
-                print(f"{name} error:", str(e))
+                results[name] = {'error': f"Failed to predict with {name}: {str(e)}"}
+                logger.error(f"{name} prediction error: {str(e)}")
 
-        try:
-            cnn_lstm_model = load_model(cnn_lstm_model_file)
-            prediction = cnn_lstm_model.predict(input_array_cnn_lstm)
-            print("CNN-LSTM raw prediction:", prediction)
-            predicted_class_idx = np.argmax(prediction, axis=1)
-            predicted_class = le.inverse_transform(predicted_class_idx)[0]
-            results['CNN-LSTM'] = {
-                'prediction': predicted_class,
-                'nature': get_packet_nature(predicted_class),
-                'probabilities': prediction[0].tolist()
-            }
-            model_predictions.append(predicted_class)
-            print("CNN-LSTM processed prediction:", predicted_class)
-        except FileNotFoundError as e:
-            results['CNN-LSTM'] = {'error': f"CNN-LSTM model not found: {str(e)}"}
-            print("CNN-LSTM error:", str(e))
-        except Exception as e:
-            results['CNN-LSTM'] = {'error': f"Failed to predict with CNN-LSTM: {str(e)}"}
-            print("CNN-LSTM error:", str(e))
+        # CNN-LSTM prediction
+        cnn_lstm_model = models.get('CNN-LSTM')
+        if cnn_lstm_model is None:
+            results['CNN-LSTM'] = {'error': "CNN-LSTM model not loaded"}
+            logger.error("CNN-LSTM model not loaded for prediction")
+        else:
+            try:
+                prediction = cnn_lstm_model.predict(input_array_cnn_lstm, verbose=0)
+                logger.info(f"CNN-LSTM raw prediction: {prediction}")
+                predicted_class_idx = np.argmax(prediction, axis=1)
+                predicted_class = le.inverse_transform(predicted_class_idx)[0]
+                results['CNN-LSTM'] = {
+                    'prediction': predicted_class,
+                    'nature': get_packet_nature(predicted_class),
+                    'probabilities': prediction[0].tolist()
+                }
+                model_predictions.append(predicted_class)
+                logger.info(f"CNN-LSTM processed prediction: {predicted_class}")
+            except Exception as e:
+                results['CNN-LSTM'] = {'error': f"Failed to predict with CNN-LSTM: {str(e)}"}
+                logger.error(f"CNN-LSTM prediction error: {str(e)}")
 
         # Compute consensus (majority vote)
         if model_predictions:
             vote_counts = Counter(model_predictions)
             max_count = max(vote_counts.values())
-            # Prioritize malicious classes in case of a tie
             priority = ['DoS', 'Probe', 'R2L', 'U2R', 'Normal']  # DoS > Probe > R2L > U2R > Normal
             candidates = [cls for cls, count in vote_counts.items() if count == max_count]
             consensus_class = min(candidates, key=lambda x: priority.index(x))
@@ -185,17 +234,16 @@ def predict():
                 'vote_count': f"{vote_counts[consensus_class]}/{total_votes}",
                 'disagreement': len(vote_counts) > 1
             }
-            print("Consensus:", results['consensus'])
+            logger.info(f"Consensus: {results['consensus']}")
         else:
-            results['consensus'] = {'error': "No valid predictions from any model."}
-            print("Consensus error: No valid predictions.")
+            results['consensus'] = {'error': "No valid predictions from any model"}
+            logger.error("Consensus error: No valid predictions")
 
-        print("Final results:", results)
+        logger.info("Final results: %s", results)
         return jsonify(results)
     except Exception as e:
-        print("General error:", str(e))
+        logger.error(f"General prediction error: {str(e)}")
         return jsonify({'error': f"Prediction failed: {str(e)}"}), 500
-
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))

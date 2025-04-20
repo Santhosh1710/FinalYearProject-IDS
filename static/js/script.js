@@ -264,17 +264,22 @@ document.getElementById('predictionForm').addEventListener('submit', async (e) =
 
     // Send data to backend
     try {
-        const response = await fetch('/predict', { // Relative URL, works on Render
+        const response = await fetch('/predict', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams(data)
         });
-
+    
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+    
         const result = await response.json();
         console.log('Backend response:', result);
-
+        
+        
         // Display consensus result
         predictionsDiv.innerHTML = '';
         const consensus = result.consensus;
@@ -370,9 +375,10 @@ document.getElementById('predictionForm').addEventListener('submit', async (e) =
         setTimeout(() => {
             resultsDiv.classList.add('show');
         }, 100);
+        
     } catch (error) {
         console.error('Submission error:', error);
-        predictionsDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        predictionsDiv.innerHTML = `<div class="alert alert-danger">Error: Failed to get prediction. Please try again later or contact support. (Error: ${error.message})</div>`;
         document.getElementById('downloadBtn').style.display = 'none';
         chartCanvas.style.display = 'none';
     }

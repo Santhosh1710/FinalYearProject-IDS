@@ -129,18 +129,61 @@ const predefinedPackets = {
         dst_host_rerror_rate: 0.0,
         dst_host_srv_rerror_rate: 0.0
     },
-    probe_portsweep: {
+    u2r_buffer_overflow: {
+    duration: 30,
+    protocol_type: 'tcp',
+    service: 'telnet',
+    flag: 'SF',
+    src_bytes: 137,
+    dst_bytes: 1403,
+    land: 0,
+    wrong_fragment: 0,
+    urgent: 0,
+    hot: 0,
+    num_failed_logins: 1,
+    logged_in: 0,
+    num_compromised: 0,
+    root_shell: 0,
+    su_attempted: 1,
+    num_root: 0,
+    num_file_creations: 0,
+    num_shells: 0,
+    num_access_files: 0,
+    num_outbound_cmds: 0,
+    is_host_login: 0,
+    is_guest_login: 0,
+    count: 1,
+    srv_count: 1,
+    serror_rate: 0.00,
+    srv_serror_rate: 0.00,
+    rerror_rate: 0.00,
+    srv_rerror_rate: 0.00,
+    same_srv_rate: 1.00,
+    diff_srv_rate: 0.00,
+    srv_diff_host_rate: 0.00,
+    dst_host_count: 235,
+    dst_host_srv_count: 17,
+    dst_host_same_srv_rate: 0.07,
+    dst_host_diff_srv_rate: 0.03,
+    dst_host_same_src_port_rate: 0.00,
+    dst_host_srv_diff_host_rate: 0.00,
+    dst_host_serror_rate: 0.00,
+    dst_host_srv_serror_rate: 0.00,
+    dst_host_rerror_rate: 0.00,
+    dst_host_srv_rerror_rate: 0.00
+},
+    probe_portsweep:{
         duration: 0,
         protocol_type: 'tcp',
-        service: 'telnet',
-        flag: 'SF',
-        src_bytes: 100,
-        dst_bytes: 100,
+        service: 'other',
+        flag: 'REJ',
+        src_bytes: 0,
+        dst_bytes: 0,
         land: 0,
         wrong_fragment: 0,
         urgent: 0,
         hot: 0,
-        num_failed_logins: 5,
+        num_failed_logins: 0,
         logged_in: 0,
         num_compromised: 0,
         root_shell: 0,
@@ -152,69 +195,26 @@ const predefinedPackets = {
         num_outbound_cmds: 0,
         is_host_login: 0,
         is_guest_login: 0,
-        count: 10,
-        srv_count: 10,
-        serror_rate: 0.0,
-        srv_serror_rate: 0.0,
-        rerror_rate: 0.0,
-        srv_rerror_rate: 0.0,
-        same_srv_rate: 1.0,
-        diff_srv_rate: 0.0,
-        srv_diff_host_rate: 0.0,
+        count: 461,
+        srv_count: 1,
+        serror_rate: 0.08,
+        srv_serror_rate: 0.00,
+        rerror_rate: 0.92,
+        srv_rerror_rate: 1.00,
+        same_srv_rate: 0.00,
+        diff_srv_rate: 1.00,
+        srv_diff_host_rate: 0.00,
         dst_host_count: 255,
-        dst_host_srv_count: 255,
-        dst_host_same_srv_rate: 1.0,
-        dst_host_diff_srv_rate: 0.0,
-        dst_host_same_src_port_rate: 0.0,
-        dst_host_srv_diff_host_rate: 0.0,
-        dst_host_serror_rate: 0.0,
-        dst_host_srv_serror_rate: 0.0,
-        dst_host_rerror_rate: 0.0,
-        dst_host_srv_rerror_rate: 0.0
+        dst_host_srv_count: 1,
+        dst_host_same_srv_rate: 0.00,
+        dst_host_diff_srv_rate: 1.00,
+        dst_host_same_src_port_rate: 0.04,
+        dst_host_srv_diff_host_rate: 0.00,
+        dst_host_serror_rate: 0.96,
+        dst_host_srv_serror_rate: 1.00,
+        dst_host_rerror_rate: 0.00,
+        dst_host_srv_rerror_rate: 1.00
     },
-    u2r_buffer_overflow: {
-        duration: 0,                    // Unchanged: Short duration typical for U2R
-        protocol_type: 'tcp',           // Unchanged: Telnet uses TCP
-        service: 'telnet',              // Unchanged: Common for U2R exploits
-        flag: 'SF',                     // Unchanged: Normal connection
-        src_bytes: 500,                 // Reduced: Smaller payload for targeted exploit
-        dst_bytes: 500,                 // Reduced: Balanced with src_bytes
-        land: 0,                        // Unchanged: Not a loopback attack
-        wrong_fragment: 0,              // Unchanged: No fragmentation errors
-        urgent: 0,                      // Unchanged: No urgent packets
-        hot: 10,                        // Reduced: Fewer "hot" actions for realism
-        num_failed_logins: 0,           // Unchanged: Successful login
-        logged_in: 1,                   // Unchanged: User is logged in
-        num_compromised: 2,             // Increased: Emphasize compromise
-        root_shell: 1,                  // Unchanged: Root access gained
-        su_attempted: 0,                // Unchanged: No explicit su attempts
-        num_root: 2,                    // Increased: Root-level actions
-        num_file_creations: 1,          // Increased: File creation during exploit
-        num_shells: 1,                  // Unchanged: Shell opened
-        num_access_files: 1,            // Increased: Access to sensitive files
-        num_outbound_cmds: 0,           // Unchanged: No outbound commands
-        is_host_login: 0,               // Unchanged: Not a host login
-        is_guest_login: 0,              // Unchanged: Not a guest
-        count: 1,                       // Unchanged: Single connection
-        srv_count: 1,                   // Unchanged: Single service connection
-        serror_rate: 0.0,               // Unchanged: No SYN errors
-        srv_serror_rate: 0.0,           // Unchanged
-        rerror_rate: 0.0,               // Unchanged: No REJ errors
-        srv_rerror_rate: 0.0,           // Unchanged
-        same_srv_rate: 1.0,             // Unchanged: All connections to same service
-        diff_srv_rate: 0.0,             // Unchanged: No different services
-        srv_diff_host_rate: 0.0,        // Unchanged: No host diversity
-        dst_host_count: 10,             // Reduced: Fewer hosts, less DoS-like
-        dst_host_srv_count: 10,         // Reduced: Fewer service connections
-        dst_host_same_srv_rate: 1.0,    // Unchanged: All to same service
-        dst_host_diff_srv_rate: 0.0,    // Unchanged: No service diversity
-        dst_host_same_src_port_rate: 0.1, // Adjusted: Slight port variation
-        dst_host_srv_diff_host_rate: 0.0, // Unchanged: No host diversity
-        dst_host_serror_rate: 0.0,      // Unchanged: No SYN errors
-        dst_host_srv_serror_rate: 0.0,  // Unchanged
-        dst_host_rerror_rate: 0.0,      // Unchanged: No REJ errors
-        dst_host_srv_rerror_rate: 0.0   // Unchanged
-    }
 };
 
 // Severity icons
@@ -338,49 +338,49 @@ document.getElementById('predictionForm').addEventListener('submit', async (e) =
             `;
         }
 
-        // Display consensus
-        const consensus = result.consensus;
-        if (!consensus.error) {
-            const alertClass = {
-                'Normal': 'alert-success',
-                'Probe': 'alert-warning',
-                'R2L': 'alert-orange',
-                'U2R': 'alert-orange',
-                'DoS': 'alert-danger'
-            }[consensus.prediction] || 'alert-info';
-            predictionsDiv.innerHTML += `
-                <div class="alert ${alertClass} mb-4" role="alert">
-                    <h4>${severityIcons[consensus.prediction]} Consensus (Majority Vote)</h4>
-                    <p><strong>Prediction:</strong> ${consensus.prediction}</p>
-                    <p><strong>Nature:</strong> ${consensus.nature}</p>
-                    <p><strong>Vote Count:</strong> ${consensus.vote_count}</p>
-                    <p><strong>Disagreement:</strong> ${consensus.disagreement ? 'Yes' : 'No'}</p>
-                </div>
-            `;
-        } else {
-            predictionsDiv.innerHTML += `
-                <div class="alert alert-warning mb-4" role="alert">
-                    <h4>Consensus</h4>
-                    <p>Error: ${consensus.error}</p>
-                </div>
-            `;
-        }
+        // // Display consensus
+        // const consensus = result.consensus;
+        // if (!consensus.error) {
+        //     const alertClass = {
+        //         'Normal': 'alert-success',
+        //         'Probe': 'alert-warning',
+        //         'R2L': 'alert-orange',
+        //         'U2R': 'alert-orange',
+        //         'DoS': 'alert-danger'
+        //     }[consensus.prediction] || 'alert-info';
+        //     predictionsDiv.innerHTML += `
+        //         <div class="alert ${alertClass} mb-4" role="alert">
+        //             <h4>${severityIcons[consensus.prediction]} Consensus (Majority Vote)</h4>
+        //             <p><strong>Prediction:</strong> ${consensus.prediction}</p>
+        //             <p><strong>Nature:</strong> ${consensus.nature}</p>
+        //             <p><strong>Vote Count:</strong> ${consensus.vote_count}</p>
+        //             <p><strong>Disagreement:</strong> ${consensus.disagreement ? 'Yes' : 'No'}</p>
+        //         </div>
+        //     `;
+        // } else {
+        //     predictionsDiv.innerHTML += `
+        //         <div class="alert alert-warning mb-4" role="alert">
+        //             <h4>Consensus</h4>
+        //             <p>Error: ${consensus.error}</p>
+        //         </div>
+        //     `;
+        // }
 
-        // Display other models (subdued)
-        const other_models = ['AdaBoost', 'Bagging', 'Random Forest', 'Voting Classifier'];
-        predictionsDiv.innerHTML += '<div class="other-models"><strong>Other Model Predictions:</strong><ul>';
-        other_models.forEach(model => {
-            if (result[model] && !result[model].error) {
-                predictionsDiv.innerHTML += `
-                    <li>${model}: ${result[model].prediction} (${result[model].nature})</li>
-                `;
-            } else {
-                predictionsDiv.innerHTML += `
-                    <li>${model}: Error - ${result[model].error}</li>
-                `;
-            }
-        });
-        predictionsDiv.innerHTML += '</ul></div>';
+        // // Display other models (subdued)
+        // const other_models = ['AdaBoost', 'Bagging', 'Random Forest', 'Voting Classifier'];
+        // predictionsDiv.innerHTML += '<div class="other-models"><strong>Other Model Predictions:</strong><ul>';
+        // other_models.forEach(model => {
+        //     if (result[model] && !result[model].error) {
+        //         predictionsDiv.innerHTML += `
+        //             <li>${model}: ${result[model].prediction} (${result[model].nature})</li>
+        //         `;
+        //     } else {
+        //         predictionsDiv.innerHTML += `
+        //             <li>${model}: Error - ${result[model].error}</li>
+        //         `;
+        //     }
+        // });
+        // predictionsDiv.innerHTML += '</ul></div>';
 
         // Render probability chart for CNN-LSTM
         if (result['CNN-LSTM'] && result['CNN-LSTM'].probabilities) {

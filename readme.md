@@ -65,7 +65,7 @@ A machine learning-powered web app to classify network packets as Normal, DoS, P
 
 ```bash
 # Clone the Repository
-git clone https://github.com/your-username/network-packet-classifier.git
+git clone https://github.com/Santhosh1710/FinalYearProject-IDS.git
 cd network-packet-classifier
 
 # Create a Virtual Environment
@@ -93,7 +93,6 @@ Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 3. **Explore Results**  
    - CNN-LSTM prediction highlighted with a probability chart  
-   - Consensus prediction and other model outputs  
    - Download results via the **Download Prediction** button
 
 4. **Toggle Theme**  
@@ -105,7 +104,6 @@ Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 ```
 network-packet-classifier/
-├── images/                  # Store screenshots (e.g., light-theme-form.png)
 ├── static/
 │   ├── css/
 │   │   └── styles.css       # Custom styles (solid background, placeholder colors)
@@ -127,7 +125,6 @@ network-packet-classifier/
 - **Visualization**: Chart.js 3.9.1  
 - **Fonts**: Inter (Google Fonts)  
 - **Icons**: Font Awesome 6.4.0  
-- **Deployment**: Render  
 
 ---
 

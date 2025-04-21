@@ -1,4 +1,4 @@
-// Predefined packet values (unchanged)
+// Predefined packet values
 const predefinedPackets = {
     normal_http: {
         duration: 0,
@@ -257,10 +257,12 @@ document.getElementById('predictionForm').addEventListener('submit', async (e) =
     const resultsDiv = document.getElementById('results');
     const predictionsDiv = document.getElementById('predictions');
     const chartCanvas = document.getElementById('probChart');
+    const resultsHeader = document.getElementById('resultsHeader');
     resultsDiv.style.display = 'block';
     resultsDiv.classList.remove('show');
     predictionsDiv.innerHTML = '<div class="alert alert-info"><span>Predicting...</span></div>';
-    chartCanvas.style.display = 'none'; // Hide chart initially
+    chartCanvas.style.display = 'none';
+    resultsHeader.className = 'card-header text-white bg-primary';
 
     // Send data to backend
     try {
@@ -271,116 +273,197 @@ document.getElementById('predictionForm').addEventListener('submit', async (e) =
             },
             body: new URLSearchParams(data)
         });
-    
+
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-    
+
         const result = await response.json();
         console.log('Backend response:', result);
-        
-        
-        // Display consensus result
+
+        // Display results
         predictionsDiv.innerHTML = '';
-        const consensus = result.consensus;
-        if (consensus.error) {
-            predictionsDiv.innerHTML = `<div class="alert alert-danger">Error: ${consensus.error}</div>`;
-        } else {
-            // Determine alert class
+
+        // Check if any predictions are available
+        let has_predictions = false;
+        for (const model in result) {
+            if (model !== 'consensus' && !result[model].error) {
+                has_predictions = true;
+                break;
+            }
+        }
+
+        if (!has_predictions && result.consensus.error) {
+            predictionsDiv.innerHTML = `<div class="alert alert-danger">Error: ${result.consensus.error}</div>`;
+            chartCanvas.style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+            resultsHeader.className = 'card-header text-white bg-danger';
+            return;
+        }
+
+        // Set results header based on CNN-LSTM or consensus
+        const headerClass = {
+            'Normal': 'bg-success',
+            'Probe': 'bg-warning',
+            'R2L': 'bg-orange',
+            'U2R': 'bg-orange',
+            'DoS': 'bg-danger'
+        }[result['CNN-LSTM'] && !result['CNN-LSTM'].error ? result['CNN-LSTM'].prediction : result.consensus.prediction] || 'bg-primary';
+        resultsHeader.className = `card-header text-white ${headerClass}`;
+
+        // Display CNN-LSTM prominently
+        if (result['CNN-LSTM'] && !result['CNN-LSTM'].error) {
+            const cnn_lstm = result['CNN-LSTM'];
             const alertClass = {
                 'Normal': 'alert-success',
                 'Probe': 'alert-warning',
                 'R2L': 'alert-orange',
                 'U2R': 'alert-orange',
                 'DoS': 'alert-danger'
-            }[consensus.prediction] || 'alert-secondary';
-
-            // Main consensus output
-            const consensusDiv = document.createElement('div');
-            consensusDiv.className = `alert ${alertClass} mb-3`;
-            consensusDiv.innerHTML = `<strong>${severityIcons[consensus.prediction]} Flagged as ${consensus.prediction}</strong>: ${consensus.nature} (Majority vote: ${consensus.vote_count})` +
-                                     (consensus.disagreement ? '<br><small class="text-muted">Note: Models disagree, indicating potential ambiguity.</small>' : '');
-            predictionsDiv.appendChild(consensusDiv);
-
-            // Model predictions
-            const modelDiv = document.createElement('div');
-            modelDiv.innerHTML = '<strong>Model Predictions:</strong><ul>';
-            for (const [model, prediction] of Object.entries(result)) {
-                if (model === 'consensus') continue;
-                if (prediction.error) {
-                    modelDiv.innerHTML += `<li>${model}: Error - ${prediction.error}</li>`;
-                } else {
-                    const probText = prediction.probabilities ? ` (Probabilities: ${prediction.probabilities.map(p => p.toFixed(4)).join(', ')})` : '';
-                    modelDiv.innerHTML += `<li>${model}: ${prediction.prediction}${probText}</li>`;
-                }
-            }
-            modelDiv.innerHTML += '</ul>';
-            predictionsDiv.appendChild(modelDiv);
-
-            // Render probability chart
-            if (result['CNN-LSTM'] && result['CNN-LSTM'].probabilities) {
-                chartCanvas.style.display = 'block';
-                const ctx = chartCanvas.getContext('2d');
-                
-                // Destroy existing chart if any
-                if (chartCanvas.chart) {
-                    chartCanvas.chart.destroy();
-                }
-
-                chartCanvas.chart = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['DoS', 'Normal', 'Probe', 'R2L', 'U2R'],
-                        datasets: [{
-                            label: 'CNN-LSTM Probabilities',
-                            data: result['CNN-LSTM'].probabilities,
-                            backgroundColor: [
-                                '#dc3545', // DoS (red)
-                                '#28a745', // Normal (green)
-                                '#ffc107', // Probe (yellow)
-                                '#fd7e14', // R2L (orange)
-                                '#fd7e14'  // U2R (orange)
-                            ],
-                            borderColor: '#fff',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        animation: { duration: 1000, easing: 'easeOutQuart' },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 1,
-                                title: { display: true, text: 'Probability', color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' },
-                                ticks: { color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' }
-                            },
-                            x: {
-                                title: { display: true, text: 'Class', color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' },
-                                ticks: { color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' }
-                            }
-                        },
-                        plugins: {
-                            legend: { labels: { color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' } },
-                            tooltip: { callbacks: { label: (context) => `${context.parsed.y.toFixed(4)}` } }
-                        }
-                    }
-                });
-            }
-
-            // Show download button
-            document.getElementById('downloadBtn').style.display = 'block';
+            }[cnn_lstm.prediction] || 'alert-primary';
+            predictionsDiv.innerHTML += `
+                <div class="alert ${alertClass} cnn-lstm-highlight mb-4" role="alert">
+                    <h4>${severityIcons[cnn_lstm.prediction]} CNN-LSTM (Featured Model) <span class="badge bg-success">Advanced</span></h4>
+                    <p><strong>Prediction:</strong> ${cnn_lstm.prediction}</p>
+                    <p><strong>Nature:</strong> ${cnn_lstm.nature}</p>
+                    <p><strong>Probabilities:</strong> ${cnn_lstm.probabilities.map(p => p.toFixed(4)).join(', ')}</p>
+                </div>
+            `;
+        } else {
+            predictionsDiv.innerHTML += `
+                <div class="alert alert-warning mb-4" role="alert">
+                    <h4>CNN-LSTM</h4>
+                    <p>Error: ${result['CNN-LSTM'].error}</p>
+                </div>
+            `;
         }
+
+        // Display consensus
+        const consensus = result.consensus;
+        if (!consensus.error) {
+            const alertClass = {
+                'Normal': 'alert-success',
+                'Probe': 'alert-warning',
+                'R2L': 'alert-orange',
+                'U2R': 'alert-orange',
+                'DoS': 'alert-danger'
+            }[consensus.prediction] || 'alert-info';
+            predictionsDiv.innerHTML += `
+                <div class="alert ${alertClass} mb-4" role="alert">
+                    <h4>${severityIcons[consensus.prediction]} Consensus (Majority Vote)</h4>
+                    <p><strong>Prediction:</strong> ${consensus.prediction}</p>
+                    <p><strong>Nature:</strong> ${consensus.nature}</p>
+                    <p><strong>Vote Count:</strong> ${consensus.vote_count}</p>
+                    <p><strong>Disagreement:</strong> ${consensus.disagreement ? 'Yes' : 'No'}</p>
+                </div>
+            `;
+        } else {
+            predictionsDiv.innerHTML += `
+                <div class="alert alert-warning mb-4" role="alert">
+                    <h4>Consensus</h4>
+                    <p>Error: ${consensus.error}</p>
+                </div>
+            `;
+        }
+
+        // Display other models (subdued)
+        const other_models = ['AdaBoost', 'Bagging', 'Random Forest', 'Voting Classifier'];
+        predictionsDiv.innerHTML += '<div class="other-models"><strong>Other Model Predictions:</strong><ul>';
+        other_models.forEach(model => {
+            if (result[model] && !result[model].error) {
+                predictionsDiv.innerHTML += `
+                    <li>${model}: ${result[model].prediction} (${result[model].nature})</li>
+                `;
+            } else {
+                predictionsDiv.innerHTML += `
+                    <li>${model}: Error - ${result[model].error}</li>
+                `;
+            }
+        });
+        predictionsDiv.innerHTML += '</ul></div>';
+
+        // Render probability chart for CNN-LSTM
+        if (result['CNN-LSTM'] && result['CNN-LSTM'].probabilities) {
+            chartCanvas.style.display = 'block';
+            const ctx = chartCanvas.getContext('2d');
+
+            // Destroy existing chart if any
+            if (chartCanvas.chart) {
+                chartCanvas.chart.destroy();
+            }
+
+            chartCanvas.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['DoS', 'Normal', 'Probe', 'R2L', 'U2R'],
+                    datasets: [{
+                        label: 'CNN-LSTM Probabilities (Featured Model)',
+                        data: result['CNN-LSTM'].probabilities,
+                        backgroundColor: [
+                            '#dc3545', // DoS (red)
+                            '#28a745', // Normal (green)
+                            '#ffc107', // Probe (yellow)
+                            '#fd7e14', // R2L (orange)
+                            '#fd7e14'  // U2R (orange)
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    animation: { duration: 1000, easing: 'easeOutQuart' },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            title: {
+                                display: true,
+                                text: 'Probability',
+                                color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529',
+                                font: { size: 16 }
+                            },
+                            ticks: { color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' },
+                            grid: { color: document.body.classList.contains('dark-theme') ? '#495057' : '#dee2e6' }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Class',
+                                color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529',
+                                font: { size: 16 }
+                            },
+                            ticks: { color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' },
+                            grid: { color: document.body.classList.contains('dark-theme') ? '#495057' : '#dee2e6' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529' } },
+                        title: {
+                            display: true,
+                            text: 'CNN-LSTM Probability Distribution',
+                            color: document.body.classList.contains('dark-theme') ? '#e9ecef' : '#212529',
+                            font: { size: 18 }
+                        },
+                        tooltip: { callbacks: { label: (context) => `${context.parsed.y.toFixed(4)}` } }
+                    }
+                }
+            });
+        }
+
+        // Show download button
+        document.getElementById('downloadBtn').style.display = 'block';
 
         // Animate results
         setTimeout(() => {
             resultsDiv.classList.add('show');
         }, 100);
-        
+
     } catch (error) {
         console.error('Submission error:', error);
         predictionsDiv.innerHTML = `<div class="alert alert-danger">Error: Failed to get prediction. Please try again later or contact support. (Error: ${error.message})</div>`;
         document.getElementById('downloadBtn').style.display = 'none';
         chartCanvas.style.display = 'none';
+        resultsHeader.className = 'card-header text-white bg-danger';
     }
 });
 
@@ -395,6 +478,7 @@ document.getElementById('clearForm').addEventListener('click', () => {
     if (chartCanvas.chart) {
         chartCanvas.chart.destroy();
     }
+    document.getElementById('resultsHeader').className = 'card-header text-white bg-primary';
 });
 
 // Download prediction
@@ -415,15 +499,25 @@ document.getElementById('themeToggle').addEventListener('click', () => {
     const icon = document.getElementById('themeToggle').querySelector('i');
     icon.classList.toggle('fa-moon');
     icon.classList.toggle('fa-sun');
+
     // Update chart colors if chart exists
     const chartCanvas = document.getElementById('probChart');
     if (chartCanvas.chart) {
         const isDark = document.body.classList.contains('dark-theme');
-        chartCanvas.chart.options.scales.y.title.color = isDark ? '#e9ecef' : '#212529';
-        chartCanvas.chart.options.scales.y.ticks.color = isDark ? '#e9ecef' : '#212529';
-        chartCanvas.chart.options.scales.x.title.color = isDark ? '#e9ecef' : '#212529';
-        chartCanvas.chart.options.scales.x.ticks.color = isDark ? '#e9ecef' : '#212529';
-        chartCanvas.chart.options.plugins.legend.labels.color = isDark ? '#e9ecef' : '#212529';
+        const textColor = isDark ? '#e9ecef' : '#212529';
+        const gridColor = isDark ? '#495057' : '#dee2e6';
+        const chartBg = isDark ? '#2c3236' : '#ffffff';
+
+        chartCanvas.chart.options.scales.y.title.color = textColor;
+        chartCanvas.chart.options.scales.y.ticks.color = textColor;
+        chartCanvas.chart.options.scales.y.grid.color = gridColor;
+        chartCanvas.chart.options.scales.x.title.color = textColor;
+        chartCanvas.chart.options.scales.x.ticks.color = textColor;
+        chartCanvas.chart.options.scales.x.grid.color = gridColor;
+        chartCanvas.chart.options.plugins.legend.labels.color = textColor;
+        chartCanvas.chart.options.plugins.title.color = textColor;
+        chartCanvas.style.backgroundColor = chartBg;
+
         chartCanvas.chart.update();
     }
 });

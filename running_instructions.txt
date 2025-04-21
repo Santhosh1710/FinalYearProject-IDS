@@ -1,0 +1,4 @@
+source ids-env/bin/activate; python app.py
+
+
+deactivate

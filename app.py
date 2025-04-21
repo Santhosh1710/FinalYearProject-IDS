@@ -241,7 +241,7 @@ def predict():
             except Exception as e:
                 results['CNN-LSTM'] = {'error': f"Failed to predict with CNN-LSTM: {str(e)}"}
                 logger.error(f"CNN-LSTM prediction error: {str(e)}")
-
+                
         # Compute consensus (majority vote)
         if model_predictions:
             vote_counts = Counter(model_predictions)

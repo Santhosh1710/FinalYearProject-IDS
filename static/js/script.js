@@ -86,7 +86,7 @@ const predefinedPackets = {
         dst_host_rerror_rate: 0.0,
         dst_host_srv_rerror_rate: 0.0
     },
-    probe_portsweep: {
+    r2l_guess_passwd: {
         duration: 0,
         protocol_type: 'tcp',
         service: 'telnet',
@@ -129,7 +129,7 @@ const predefinedPackets = {
         dst_host_rerror_rate: 0.0,
         dst_host_srv_rerror_rate: 0.0
     },
-    r2l_guess_passwd: {
+    probe_portsweep: {
         duration: 0,
         protocol_type: 'tcp',
         service: 'telnet',
@@ -173,47 +173,47 @@ const predefinedPackets = {
         dst_host_srv_rerror_rate: 0.0
     },
     u2r_buffer_overflow: {
-        duration: 0,
-        protocol_type: 'tcp',
-        service: 'telnet',
-        flag: 'SF',
-        src_bytes: 1000,
-        dst_bytes: 1000,
-        land: 0,
-        wrong_fragment: 0,
-        urgent: 0,
-        hot: 30,
-        num_failed_logins: 0,
-        logged_in: 1,
-        num_compromised: 1,
-        root_shell: 1,
-        su_attempted: 0,
-        num_root: 1,
-        num_file_creations: 0,
-        num_shells: 1,
-        num_access_files: 0,
-        num_outbound_cmds: 0,
-        is_host_login: 0,
-        is_guest_login: 0,
-        count: 1,
-        srv_count: 1,
-        serror_rate: 0.0,
-        srv_serror_rate: 0.0,
-        rerror_rate: 0.0,
-        srv_rerror_rate: 0.0,
-        same_srv_rate: 1.0,
-        diff_srv_rate: 0.0,
-        srv_diff_host_rate: 0.0,
-        dst_host_count: 255,
-        dst_host_srv_count: 255,
-        dst_host_same_srv_rate: 1.0,
-        dst_host_diff_srv_rate: 0.0,
-        dst_host_same_src_port_rate: 0.0,
-        dst_host_srv_diff_host_rate: 0.0,
-        dst_host_serror_rate: 0.0,
-        dst_host_srv_serror_rate: 0.0,
-        dst_host_rerror_rate: 0.0,
-        dst_host_srv_rerror_rate: 0.0
+        duration: 0,                    // Unchanged: Short duration typical for U2R
+        protocol_type: 'tcp',           // Unchanged: Telnet uses TCP
+        service: 'telnet',              // Unchanged: Common for U2R exploits
+        flag: 'SF',                     // Unchanged: Normal connection
+        src_bytes: 500,                 // Reduced: Smaller payload for targeted exploit
+        dst_bytes: 500,                 // Reduced: Balanced with src_bytes
+        land: 0,                        // Unchanged: Not a loopback attack
+        wrong_fragment: 0,              // Unchanged: No fragmentation errors
+        urgent: 0,                      // Unchanged: No urgent packets
+        hot: 10,                        // Reduced: Fewer "hot" actions for realism
+        num_failed_logins: 0,           // Unchanged: Successful login
+        logged_in: 1,                   // Unchanged: User is logged in
+        num_compromised: 2,             // Increased: Emphasize compromise
+        root_shell: 1,                  // Unchanged: Root access gained
+        su_attempted: 0,                // Unchanged: No explicit su attempts
+        num_root: 2,                    // Increased: Root-level actions
+        num_file_creations: 1,          // Increased: File creation during exploit
+        num_shells: 1,                  // Unchanged: Shell opened
+        num_access_files: 1,            // Increased: Access to sensitive files
+        num_outbound_cmds: 0,           // Unchanged: No outbound commands
+        is_host_login: 0,               // Unchanged: Not a host login
+        is_guest_login: 0,              // Unchanged: Not a guest
+        count: 1,                       // Unchanged: Single connection
+        srv_count: 1,                   // Unchanged: Single service connection
+        serror_rate: 0.0,               // Unchanged: No SYN errors
+        srv_serror_rate: 0.0,           // Unchanged
+        rerror_rate: 0.0,               // Unchanged: No REJ errors
+        srv_rerror_rate: 0.0,           // Unchanged
+        same_srv_rate: 1.0,             // Unchanged: All connections to same service
+        diff_srv_rate: 0.0,             // Unchanged: No different services
+        srv_diff_host_rate: 0.0,        // Unchanged: No host diversity
+        dst_host_count: 10,             // Reduced: Fewer hosts, less DoS-like
+        dst_host_srv_count: 10,         // Reduced: Fewer service connections
+        dst_host_same_srv_rate: 1.0,    // Unchanged: All to same service
+        dst_host_diff_srv_rate: 0.0,    // Unchanged: No service diversity
+        dst_host_same_src_port_rate: 0.1, // Adjusted: Slight port variation
+        dst_host_srv_diff_host_rate: 0.0, // Unchanged: No host diversity
+        dst_host_serror_rate: 0.0,      // Unchanged: No SYN errors
+        dst_host_srv_serror_rate: 0.0,  // Unchanged
+        dst_host_rerror_rate: 0.0,      // Unchanged: No REJ errors
+        dst_host_srv_rerror_rate: 0.0   // Unchanged
     }
 };
 

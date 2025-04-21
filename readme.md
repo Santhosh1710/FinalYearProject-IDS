@@ -32,13 +32,17 @@ A machine learning-powered web app to classify network packets as Normal, DoS, P
 
 ## 📷 Screenshots
 
-- **Light Theme - Form Input**  
+- **Landing Page - Light Theme**
+   
   Entering packet details in the light theme with clear placeholders.  
-- **Dark Theme - Form Input**  
+- **Landing Page - Dark Theme**
+
   Same form in dark theme, showcasing adaptive placeholder colors.  
 - **Prediction Results**  
+
   Results displaying CNN-LSTM prediction, consensus, and other models with a probability chart.  
 - **Mobile View**  
+
   Responsive design on a mobile device.  
 
 > **Note**: Replace placeholder image paths (e.g., `images/light-theme-form.png`) with actual screenshot files in the `images/` folder.

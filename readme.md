@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/5388a566-a3de-4aa8-bb05-d6f457bc7b22)# Network Packet Classifier
+# Network Packet Classifier
 
 A machine learning-powered web app to classify network packets as Normal, DoS, Probe, R2L, or U2R using various ML models including an advanced CNN-LSTM.
 

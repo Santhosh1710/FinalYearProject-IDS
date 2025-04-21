@@ -1,4 +1,4 @@
-source ids-env/bin/activate; python app.py
+source ids-env/bin/activate; python app.py  # if virtual env used
+deactivate # end virtual env
 
-
-deactivate
+python app.py # run in local

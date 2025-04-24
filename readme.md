@@ -38,14 +38,18 @@ A machine learning-powered web app to classify network packets as Normal, DoS, P
 ![DarkThemeLandingPage](https://github.com/user-attachments/assets/579ab44b-786b-4e96-a828-b9f4ef92967c)
 
 - **Prediction Results**  
-* Normal Packet
-![NormalPacket](https://github.com/user-attachments/assets/4527ab9a-6de9-498e-b7c6-dd82e43c0a70)
-* DoS Packet
-![DOSPacket](https://github.com/user-attachments/assets/548d4c5a-84c5-4194-810a-164746e0128e)
-* R2L Packet
-![R2LPacket](https://github.com/user-attachments/assets/c7ae1eb7-1efe-485c-839a-3329f697a829)
+  * Normal-Http Packet
+    ![image](https://github.com/user-attachments/assets/a0846705-b552-43fd-931f-13967ed9112f)
+  * DoS-Smurf Packet
+    ![image](https://github.com/user-attachments/assets/d1009f93-89cd-4c50-bf0d-8bd6632f368d)
+  * Probe-Portsweep Packet
+    ![image](https://github.com/user-attachments/assets/b0da7497-f02d-4d31-a559-83d22c98559c)
+  * GuessPassword Packet
+    ![image](https://github.com/user-attachments/assets/bd633423-2547-41f4-9dc8-d0a78c90c7f9)
+  * BufferOverflow Packet
+    ![image](https://github.com/user-attachments/assets/529e9597-b79e-488c-9a38-e5e41b86a8b9)
 
-  Results displaying CNN-LSTM prediction, consensus, and other models with a probability chart.  
+  Results displaying CNN-LSTM prediction with a probability chart.  
 
 ---
 
@@ -61,7 +65,7 @@ A machine learning-powered web app to classify network packets as Normal, DoS, P
 
 ```bash
 # Clone the Repository
-git clone https://github.com/your-username/network-packet-classifier.git
+git clone https://github.com/Santhosh1710/FinalYearProject-IDS.git
 cd network-packet-classifier
 
 # Create a Virtual Environment
@@ -89,7 +93,6 @@ Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 3. **Explore Results**  
    - CNN-LSTM prediction highlighted with a probability chart  
-   - Consensus prediction and other model outputs  
    - Download results via the **Download Prediction** button
 
 4. **Toggle Theme**  
@@ -101,7 +104,6 @@ Visit [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
 ```
 network-packet-classifier/
-├── images/                  # Store screenshots (e.g., light-theme-form.png)
 ├── static/
 │   ├── css/
 │   │   └── styles.css       # Custom styles (solid background, placeholder colors)
@@ -123,7 +125,6 @@ network-packet-classifier/
 - **Visualization**: Chart.js 3.9.1  
 - **Fonts**: Inter (Google Fonts)  
 - **Icons**: Font Awesome 6.4.0  
-- **Deployment**: Render  
 
 ---
 

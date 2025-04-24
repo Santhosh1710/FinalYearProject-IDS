@@ -73,16 +73,16 @@ le.fit(['DoS', 'Normal', 'Probe', 'R2L', 'U2R'])
 class_names = le.classes_
 
 # Model files
-classical_models = {
-    'AdaBoost': 'adaboost_model.pkl',
-    'Bagging': 'bagging_model.pkl',
-    'Random Forest': 'random_forest_model.pkl',
-    'Voting Classifier': 'voting_classifier_2.pkl'
-}
+# classical_models = {
+#     'AdaBoost': 'adaboost_model.pkl',
+#     'Bagging': 'bagging_model.pkl',
+#     'Random Forest': 'random_forest_model.pkl',
+#     'Voting Classifier': 'voting_classifier_2.pkl'
+# }
 cnn_lstm_model_file = 'ids_lstm_model_final.h5'
 
 # Verify model files exist
-required_files = list(classical_models.values()) + [cnn_lstm_model_file, 'KDDTrain+.txt']
+required_files = [cnn_lstm_model_file, 'KDDTrain+.txt']
 missing_files = [f for f in required_files if not os.path.exists(f)]
 if missing_files:
     logger.error(f"Missing files: {missing_files}")
@@ -115,19 +115,19 @@ except Exception as e:
     training_columns = None
 
 # Load models
-models = {}
-for name, model_file in classical_models.items():
-    if not os.path.exists(model_file):
-        logger.error(f"Model file {model_file} not found")
-        models[name] = None
-        continue
-    try:
-        logger.info(f"Loading {name} model...")
-        models[name] = joblib.load(model_file)
-        logger.info(f"{name} model loaded successfully")
-    except Exception as e:
-        logger.error(f"Failed to load {name} model: {str(e)}")
-        models[name] = None
+# models = {}
+# for name, model_file in classical_models.items():
+#     if not os.path.exists(model_file):
+#         logger.error(f"Model file {model_file} not found")
+#         models[name] = None
+#         continue
+#     try:
+#         logger.info(f"Loading {name} model...")
+#         models[name] = joblib.load(model_file)
+#         logger.info(f"{name} model loaded successfully")
+#     except Exception as e:
+#         logger.error(f"Failed to load {name} model: {str(e)}")
+#         models[name] = None
 
 if not os.path.exists(cnn_lstm_model_file):
     logger.error(f"CNN-LSTM model file {cnn_lstm_model_file} not found")
@@ -193,32 +193,32 @@ def predict():
         # Make predictions
         results = {}
         model_predictions = []
-        for name, model_file in classical_models.items():
-            model = models.get(name)
-            if model is None:
-                results[name] = {'error': f"Model {name} not loaded"}
-                logger.error(f"Model {name} not loaded for prediction")
-                continue
-            try:
-                prediction = model.predict(input_array)
-                logger.info(f"{name} raw prediction: {prediction}")
-                if np.issubdtype(prediction.dtype, np.integer):
-                    predicted_class = le.inverse_transform(prediction)[0]
-                else:
-                    predicted_class = str(prediction[0])
-                    if predicted_class not in class_names:
-                        results[name] = {'error': f"Invalid class: {predicted_class}"}
-                        logger.error(f"Invalid class from {name}: {predicted_class}")
-                        continue
-                results[name] = {
-                    'prediction': predicted_class,
-                    'nature': get_packet_nature(predicted_class)
-                }
-                model_predictions.append(predicted_class)
-                logger.info(f"{name} processed prediction: {predicted_class}")
-            except Exception as e:
-                results[name] = {'error': f"Failed to predict with {name}: {str(e)}"}
-                logger.error(f"{name} prediction error: {str(e)}")
+        # for name, model_file in classical_models.items():
+        #     model = models.get(name)
+        #     if model is None:
+        #         results[name] = {'error': f"Model {name} not loaded"}
+        #         logger.error(f"Model {name} not loaded for prediction")
+        #         continue
+        #     try:
+        #         prediction = model.predict(input_array)
+        #         logger.info(f"{name} raw prediction: {prediction}")
+        #         if np.issubdtype(prediction.dtype, np.integer):
+        #             predicted_class = le.inverse_transform(prediction)[0]
+        #         else:
+        #             predicted_class = str(prediction[0])
+        #             if predicted_class not in class_names:
+        #                 results[name] = {'error': f"Invalid class: {predicted_class}"}
+        #                 logger.error(f"Invalid class from {name}: {predicted_class}")
+        #                 continue
+        #         results[name] = {
+        #             'prediction': predicted_class,
+        #             'nature': get_packet_nature(predicted_class)
+        #         }
+        #         model_predictions.append(predicted_class)
+        #         logger.info(f"{name} processed prediction: {predicted_class}")
+        #     except Exception as e:
+        #         results[name] = {'error': f"Failed to predict with {name}: {str(e)}"}
+        #         logger.error(f"{name} prediction error: {str(e)}")
 
         # CNN-LSTM prediction
         cnn_lstm_model = models.get('CNN-LSTM')
